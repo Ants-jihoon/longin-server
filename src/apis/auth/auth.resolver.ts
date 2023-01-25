@@ -4,6 +4,9 @@ import * as bcrypt from 'bcrypt';
 import { UserService } from "../users/users.service";
 import { AuthService } from "./auth.service";
 import { UnprocessableEntityException } from '@nestjs/common/exceptions'
+import { CurrentUser } from "src/commons/auth/gql-user.param";
+import { emailTokenGuard } from "src/commons/auth/gql-auth.guard";
+import { UseGuards } from '@nestjs/common'
 
 @Resolver()
 export class AuthResolver {
@@ -16,7 +19,7 @@ export class AuthResolver {
     async login(
         @Args('email') email: string,
         @Args('psword') psword: string,
-        @Context() context: any,  //cookie 관련된거
+        @Context() context: any,
     ) {
         const user = await this.userService.findOne({ email })
         if (!user) {
@@ -26,6 +29,9 @@ export class AuthResolver {
         if (!isAuth) {
             throw new UnprocessableEntityException('암호가 틀렸습니다.')
         }
+
+        this.authService.getRefreshToken({ user, res: context.req.res })
+
         return this.authService.getAccessToken({ user })
 
 
@@ -34,22 +40,24 @@ export class AuthResolver {
     @Mutation(() => String)
     async sendEmail(
         @Args('email') email: string,
+        @Context() context: any,
     ) {
         const eToken = await this.authService.emailCode()
-        const test = await this.authService.sendCode({ email, eToken })
+        const test = await this.authService.sendCode({ email, eToken, res: context.req.res })
         console.log(test.authNum)
         return test.result
 
     }
 
-    // @Mutation(() => Boolean)
-    // async checkEmail(
-    //     @Args('eToken') eToken: string,
-    // ) {
-    //     //============================쿠키에 있는 hashedeToken 비교===============
-    //     // const valid = await bcrypt.compare(eToken,);
-    //     //=============================================================
-    // }
+
+    @UseGuards(emailTokenGuard)
+    @Mutation(() => String)
+    async checkEmail(
+        @CurrentUser() currentUser: any
+    ) {
+        console.log(currentUser)
+        return true
+    }
 
 
 }

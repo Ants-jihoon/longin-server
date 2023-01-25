@@ -1,5 +1,5 @@
 import { MailerService } from "@nestjs-modules/mailer/dist";
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt/dist";
 import * as bcrypt from 'bcrypt';
 import 'dotenv/config';
@@ -19,7 +19,7 @@ export class AuthService {
         return result
     }
 
-    async sendCode({ email, eToken }) {
+    async sendCode({ email, eToken, res }) {
         try {
             await this.mailerService.sendMail({
                 to: email, // list of receivers
@@ -27,16 +27,21 @@ export class AuthService {
                 subject: '이메일 인증 요청 메일입니다.',
                 html: '6자리 인증 코드 : ' + `<b> ${eToken}</b>`,
             });
-            const hashedeToken = await bcrypt.hash(eToken, 10);
 
-            //============================hashedeToken 쿠키로 보내기===============
-            //  res.cookie('authNum', hashedeToken, {path: '/', expires: new Date(Date.now()+300000)}); // 쿠키생성
-            //============================쿠키보내기===============
+            const hashedeToken = this.jwtService.sign(
+                { email: email, sub: eToken },
+                { secret: "myETokenKey", expiresIn: '2m' }
+            );
+
+            // const hashedeToken = await bcrypt.hash(eToken, 10);
+            res.setHeader('Set-Cookie', `emailCode=${hashedeToken}`)
+
             return { result: true, authNum: hashedeToken }
         } catch (err) {
             return { result: false }
         }
     }
+
 
     getAccessToken({ user }) {
         return this.jwtService.sign(
@@ -44,4 +49,23 @@ export class AuthService {
             { secret: "myAccessKey", expiresIn: '1h' },
         );
     }
+
+    getRefreshToken({ user, res }) {
+        const refreshToken = this.jwtService.sign(
+            { email: user.email, sub: user.nickname },
+            { secret: "myRefreshKey", expiresIn: '2w' },
+        );
+
+        res.setHeader('Set-Cookie', `refreshToken=${refreshToken}`)
+
+        // 배포환경
+        // res.setHeader('Access-Control-Allow-Origin', 'https://myfrontsite.com')
+        // res.setHeader(
+        //   'Set-Cookie',
+        //   `refreshToken=${refreshToken}; path=/; domain=.mybacksite.com; SameSite=None; Secure; httpOnly;`
+        // )
+
+    }
+
+
 }
