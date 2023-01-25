@@ -29,7 +29,15 @@ export class UserService {
         return await this.userRepository.findOneBy({ email })
     }
 
+    async findNick({ nickname }) {
+        return await this.userRepository.findOneBy({ nickname })
+    }
+
     async delete() {
+
+    }
+
+    async update() {
 
     }
 

@@ -1,7 +1,6 @@
 import { MailerService } from "@nestjs-modules/mailer/dist";
-import { Injectable, UnprocessableEntityException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt/dist";
-import * as bcrypt from 'bcrypt';
 import 'dotenv/config';
 
 
@@ -22,7 +21,7 @@ export class AuthService {
     async sendCode({ email, eToken, res }) {
         try {
             await this.mailerService.sendMail({
-                to: email, // list of receivers
+                to: email,
                 from: 'wlgnstls0413@naver.com',
                 subject: '이메일 인증 요청 메일입니다.',
                 html: '6자리 인증 코드 : ' + `<b> ${eToken}</b>`,
@@ -33,7 +32,6 @@ export class AuthService {
                 { secret: "myETokenKey", expiresIn: '2m' }
             );
 
-            // const hashedeToken = await bcrypt.hash(eToken, 10);
             res.setHeader('Set-Cookie', `emailCode=${hashedeToken}`)
 
             return { result: true, authNum: hashedeToken }
@@ -56,7 +54,7 @@ export class AuthService {
             { secret: "myRefreshKey", expiresIn: '2w' },
         );
 
-        res.setHeader('Set-Cookie', `refreshToken=${refreshToken}`)
+        res.setHeader('Set-Cookie', `refreshToken=${refreshToken}; path=/;`)
 
         // 배포환경
         // res.setHeader('Access-Control-Allow-Origin', 'https://myfrontsite.com')

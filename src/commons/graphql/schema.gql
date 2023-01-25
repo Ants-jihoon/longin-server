@@ -31,5 +31,6 @@ type Mutation {
   deleteUser(email: String!): Boolean!
   login(email: String!, psword: String!): String!
   sendEmail(email: String!): String!
-  checkEmail: String!
+  checkEmail(eToken: String!): String!
+  restoreAccessToken: String!
 }

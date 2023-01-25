@@ -40,7 +40,6 @@ export class UserResolver {
     fetchUser(
         @CurrentUser() currentUser: any,
     ) {
-
         console.log(currentUser)
         return "aasad"
     }

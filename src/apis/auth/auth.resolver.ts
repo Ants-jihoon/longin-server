@@ -5,7 +5,7 @@ import { UserService } from "../users/users.service";
 import { AuthService } from "./auth.service";
 import { UnprocessableEntityException } from '@nestjs/common/exceptions'
 import { CurrentUser } from "src/commons/auth/gql-user.param";
-import { emailTokenGuard } from "src/commons/auth/gql-auth.guard";
+import { emailTokenGuard, GqlAuthRefreshGuard } from "src/commons/auth/gql-auth.guard";
 import { UseGuards } from '@nestjs/common'
 
 @Resolver()
@@ -52,11 +52,24 @@ export class AuthResolver {
 
     @UseGuards(emailTokenGuard)
     @Mutation(() => String)
-    async checkEmail(
+    checkEmail(
+        @Args('eToken') eToken: String,
         @CurrentUser() currentUser: any
     ) {
-        console.log(currentUser)
-        return true
+        console.log(currentUser.eToken)
+        if (eToken === currentUser.eToken) {
+            return true
+        }
+        return false
+
+    }
+
+    @UseGuards(GqlAuthRefreshGuard)
+    @Mutation(() => String)
+    restoreAccessToken(
+        @CurrentUser() currentUser: any,
+    ) {
+        return this.authService.getAccessToken({ user: currentUser })
     }
 
 
